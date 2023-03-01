@@ -105,12 +105,14 @@ def run(
         view_img = check_imshow(warn=True)
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)
+      
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
     vid_path, vid_writer = [None] * bs, [None] * bs
 
+    
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
@@ -153,7 +155,15 @@ def run(
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
-
+                ###################### ambil koordinate disini ###########################
+                for *xyxy, conf, cls in reversed(det):
+                    c1,c2 = (int(xyxy[0]),int(xyxy[1])),(int(xyxy[2]),int(xyxy[3]))
+                    print(f'c1 : {c1},c2:{c2}')
+                    print(f'panjang = {c1[0]+c2[0]} lebar = {c1[1]+c2[1]}')
+                    center_point = round((c1[0]+c2[0])/2),round((c1[1]+c2[1])/2)
+                    tengah = cv2.circle(im0,center_point,5,(0,255,200),-1)
+                    text = cv2.putText(im0,str(center_point),center_point,cv2.FONT_HERSHEY_PLAIN,3,(0,255,50))
+                ##########################################################################
                 # Print results
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
@@ -176,6 +186,7 @@ def run(
 
             # Stream results
             im0 = annotator.result()
+            # algoritma selanjutnya disini
             if view_img:
                 if platform.system() == 'Linux' and p not in windows:
                     windows.append(p)
